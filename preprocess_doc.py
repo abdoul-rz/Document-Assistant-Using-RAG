@@ -1,10 +1,8 @@
 import os
 import re
-import torch
+import pdfplumber
 from docx import Document
-from pdfreader import SimplePDFViewer
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from models import load_retrevial_model
 
 
 def pdf_to_text(file_path):
@@ -17,10 +15,9 @@ def pdf_to_text(file_path):
         str: The text content of the PDF file.
     """
     text = ""
-    with open(file_path, "rb") as file:
-        viewer = SimplePDFViewer(file)
-        for canvas in viewer:
-            text += canvas.text_content
+    with pdfplumber.open(file_path) as pdf:
+        for page in pdf.pages:
+            text += page.extract_text()
     return text
 
 def docx_to_text(file_path):
@@ -49,7 +46,7 @@ def parse_document(file_path):
     """
     file_ext = os.path.splitext(file_path)[1]
     if file_ext == ".txt":
-        with open(file_path, "r") as file:
+        with open(file_path, "r", encoding='utf-8') as file:
             return file.read()
     elif file_ext == ".pdf":
         return pdf_to_text(file_path)
@@ -74,7 +71,7 @@ def preprocess_doc(file_path):
     doc_content = doc_content.lower()
     return doc_content
 
-def split_doc(file_path, chunk_size=1000, chunk_overlap=50):
+def split_doc(file_path, chunk_size=1000, chunk_overlap=100):
     """Split a document using a recursive character text splitter.
 
     Args:
@@ -93,11 +90,11 @@ def split_doc(file_path, chunk_size=1000, chunk_overlap=50):
     )
     chunks = splitter.split_text(doc_content)
     # save the chunks
-    base_name = os.path.basename(file_path)
-    chunks_path = 'data/' + base_name.replace('.pdf', '_chunks.txt')
-    with open(chunks_path, 'w') as f:
-        for chunk in chunks:
-            f.write(chunk + '\n')
+    # base_name = os.path.basename(file_path)
+    # chunks_path = 'data/' + re.sub(r'\.(txt|pdf|docx)$', '_chunks.txt', base_name)
+    # with open(chunks_path, 'w') as f:
+    #     for chunk in chunks:
+    #         f.write(chunk + '\n')
     return chunks
 
 def embed_doc(file_path, embedding_model):
@@ -114,8 +111,8 @@ def embed_doc(file_path, embedding_model):
     chunks = split_doc(file_path)
     chunks_embeddings = embedding_model.encode(chunks)
     # save the embeddings
-    base_name = os.path.basename(file_path)
-    chunks_embeddings_path = 'data/' + base_name.replace('.pdf', '_chunks_embeddings.pt')
-    torch.save(chunks_embeddings, chunks_embeddings_path)
+    # base_name = os.path.basename(file_path)
+    # chunks_embeddings_path = 'data/' + re.sub(r'\.(txt|pdf|docx)$', '_chunks_embeddings.pt', base_name)
+    # torch.save(chunks_embeddings, chunks_embeddings_path)
     return chunks_embeddings, chunks
 

@@ -17,6 +17,9 @@ def get_relevant_chunks(retrieval_model, chunk_embeddings, chunks, question, k=2
     """
     query_embedding = retrieval_model.encode(question, convert_to_tensor=True)
     scores = util.cos_sim(query_embedding, chunk_embeddings)
+    # Retrieve the top-k chunks based on document-query similarity
+    if k > len(chunks):
+        k = len(chunks)
     top_k = torch.topk(scores, k)  # Retrieve top-5 chunks
     retrieved_chunks = [chunks[idx] for idx in top_k.indices[0]]
     return retrieved_chunks
@@ -37,9 +40,14 @@ def answer_question(inference_tokenizer, inference_model, retrieved_chunks, ques
     # Concatenate the retrieved chunks
     context = " ".join(retrieved_chunks)
     # Tokenize the input text
-    inputs = inference_tokenizer(question, context, return_tensors="pt")
+    input_text = f"""Mostly based on the following context and your general knowledge, answer the given question: {context}\nQuestion: {question}"""
+    inputs = inference_tokenizer(input_text, return_tensors="pt")
     # Perform the inference
-    outputs = inference_model.generate(**inputs)
+    outputs = inference_model.generate(**inputs, pad_token_id=inference_tokenizer.eos_token_id)
     # Decode the model output
     answer = inference_tokenizer.decode(outputs[0], skip_special_tokens=True)
-    return answer
+    # well formatted answer
+    answer = answer.replace(context, "").replace(question, "")
+    to_delete = "Mostly based on the following context and your general knowledge, answer the given question: \nQuestion:"
+    answer = answer.replace(to_delete, "")
+    return answer, context
