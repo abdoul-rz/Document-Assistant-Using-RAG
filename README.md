@@ -28,21 +28,14 @@ docker build -t document-assistant-rag-cli:latest .
 3. Run the Application
 To start the CLI program interactively:
 ```bash
-docker run --rm -it document-assistant-cli:latest --doc_path data/ivory_coast.txt
+docker run --rm -it document-assistant-rag-cli:latest python main.py --doc_path data/<document_name>.txt
 ```
-
-4. Pass Local Files (Optional)
-If you want to use custom document files stored locally, mount a volume to provide access to your files:
-```bash
-docker run --rm -it -v /path/to/local/data:/app/data document-assistant-cli:latest --doc_path data/your_file.txt
-```
-Replace `/path/to/local/data` with the directory containing your document and `your_file.txt` with the document filename.
 
 ---
 
 ## Example Usage
 
-After starting the application, the interactive CLI will prompt you to ask questions based on the embedded document:
+After starting the application with the default parameters, the interactive CLI will prompt you to ask questions based on the embedded document:
 
 ```plaintext
 Loading retrieval model... 
@@ -52,7 +45,14 @@ Loading inference model...
 Models loaded successfully!
 
 Ask a question: In which city was there a terrorist attack in Côte d'Ivoire?
+
+Founded context: ...
+
 Answer: Grand-Bassam
 
 Ask a question: exit
 ```
+
+## Note
+
+- Place the files you intend to use in the `data` directory.
